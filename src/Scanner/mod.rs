@@ -7,38 +7,21 @@ struct Token {
 }
 
 enum TokenType {
-    VAR,
-    RAV,
-    PRINT,
-    IF,
-    FI,
-    DO,
-    OD,
-    ELSE,
-    FA,
-    AF,
-    TO,
-    ST,
+    VAR,   RAV,   PRINT,
+    IF,    FI,    DO,
+    OD,    ELSE,  FA,
+    AF,    TO,    ST,
 
-    ASSIGN,
-    LPAREN,
-    RPAREN,
-    PLUS,
-    MINUS,
-    TIMES,
-    DIVIDE,
-    EQ,
-    NE,
-    LT,
-    GT,
-    LE,
-    GE,
+    ASSIGN,    LPAREN,
+    RPAREN,    PLUS,
+    MINUS,     TIMES,    DIVIDE,
+    EQ,  NE,  LT,
+    GT,  LE,  GE,
 
-    ARROW,
-    BOX,
+    ARROW,   BOX,
 
     ID { id :  String },
-    NUM{ val : i32 },
+    NUM{ val : String },
     EOF,
 }
 
@@ -78,19 +61,36 @@ impl Scanner {
         }
 
         match self.curr_ch {
-            None     => { Token{ line : self.line, typ : Token::EOF } },
+            None     => { Token{ line : self.line, typ : TokenType::EOF } },
             Some(ch) => {
                 if ch.is_alphabetic() {
-                    println!("{} is alphabetic", ch);
+                    Token { line : self.line, 
+                            typ : TokenType::ID{id : self.build_val(|c| c.is_alphabetic()) }} 
                 } else if ch.is_numeric() {
-                    println!("{} is numeric", ch);
+                    Token { line : self.line, 
+                            typ : TokenType::NUM{val : self.build_val(|c| c.is_numeric()) }} 
                 } else {
-                    println!("{} is neither", ch);
-                    if ch == '\n' {
-                        self.line += 1;
-                    }
+                    self.process_special()
                 }
             }
         }
+    }
+
+    pub fn build_val<F>(&mut self, func : F) -> String
+        where F : Fn(char) -> bool { 
+        
+        let id = vec![];
+        loop {
+            let ch = match self.curr_ch {
+                Some(ch) => ch,
+                None => break,
+            };
+            match F(ch) { 
+                true => id.push(ch),
+                false => break,
+            };
+        }
+        self.put_back = true;
+        id.iter().map(|c| *c).collect()
     }
 }
