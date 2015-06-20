@@ -1,7 +1,19 @@
-pub struct scanner<'a> {
-    x : &'a Vec<String>,
+use std::fs::File;
+
+pub struct Scanner {
+    contents : String,
+    position : u32,
 }
 
-pub fn new(lines : &Vec<String>) -> scanner {
-    scanner { x : lines }
+impl Scanner { 
+    pub fn new(filename : String) -> Scanner {
+        let file = match File::open(&filename) {
+            Ok(f) => f,
+            Err(e) => panic!("Could not open {} : {}", filename, e),
+        };
+        let cont = String::new();
+        Scanner { contents : cont, position : 0 }
+    }
+
+    
 }
