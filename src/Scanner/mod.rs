@@ -1,6 +1,47 @@
 use std::fs::File;
 use std::io::Read;
 
+struct Token {
+    typ  : TokenType,
+    line : u16,
+}
+
+enum TokenType {
+    VAR,
+    RAV,
+    PRINT,
+    IF,
+    FI,
+    DO,
+    OD,
+    ELSE,
+    FA,
+    AF,
+    TO,
+    ST,
+
+    ASSIGN,
+    LPAREN,
+    RPAREN,
+    PLUS,
+    MINUS,
+    TIMES,
+    DIVIDE,
+    EQ,
+    NE,
+    LT,
+    GT,
+    LE,
+    GE,
+
+    ARROW,
+    BOX,
+
+    ID { id :  String },
+    NUM{ val : i32 },
+    EOF,
+}
+
 pub struct Scanner {
     contents : String,
     curr_ch  : Option<char>,
@@ -30,14 +71,14 @@ impl Scanner {
     }
 
     // For now just output the value scanned
-    pub fn scan(&mut self) {
+    pub fn scan(&mut self) -> Token {
         match self.put_back {
             true => { self.put_back = false; },
             false => { self.curr_ch = self.next_char(); }
         }
 
         match self.curr_ch {
-            None     => { panic!("[ERROR] Scan called after EOF"); },
+            None     => { Token{ line : self.line, typ : Token::EOF } },
             Some(ch) => {
                 if ch.is_alphabetic() {
                     println!("{} is alphabetic", ch);
@@ -45,6 +86,9 @@ impl Scanner {
                     println!("{} is numeric", ch);
                 } else {
                     println!("{} is neither", ch);
+                    if ch == '\n' {
+                        self.line += 1;
+                    }
                 }
             }
         }
