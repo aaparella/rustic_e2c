@@ -76,16 +76,20 @@ impl Scanner {
         }
     }
 
-    pub fn build_val<F>(&mut self, func : F) -> String
+    fn process_special(&mut self) -> Token {
+        Token { line : 0, typ : TokenType::EOF }
+    }
+
+    fn build_val<F>(&mut self, func : F) -> String
         where F : Fn(char) -> bool { 
         
-        let id = vec![];
+        let mut id = vec![];
         loop {
             let ch = match self.curr_ch {
                 Some(ch) => ch,
                 None => break,
             };
-            match F(ch) { 
+            match func(ch) { 
                 true => id.push(ch),
                 false => break,
             };
