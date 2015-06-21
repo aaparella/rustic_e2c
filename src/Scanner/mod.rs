@@ -1,11 +1,13 @@
 use std::fs::File;
 use std::io::Read;
 
+#[derive(Debug)]
 struct Token {
     typ  : TokenType,
     line : u16,
 }
 
+#[derive(Debug)]
 enum TokenType {
     VAR,   RAV,   PRINT,
     IF,    FI,    DO,
@@ -33,6 +35,24 @@ pub struct Scanner {
     put_back : bool,
 }
 
+fn type_for_id(_id : String) -> TokenType {
+    match _id.as_ref() {
+        "var" => TokenType::VAR,
+        "rav" => TokenType::RAV,
+        "print" => TokenType::PRINT,
+        "if" => TokenType::IF,
+        "fi" => TokenType::FI,
+        "do" => TokenType::DO,
+        "od" => TokenType::OD,
+        "else" => TokenType::ELSE,
+        "fa" => TokenType::FA,
+        "af" => TokenType::AF,
+        "to" => TokenType::TO,
+        "st" => TokenType::ST,
+         _ => TokenType::ID{id : _id},
+     }
+}
+
 impl Scanner { 
     pub fn new(filename : String) -> Scanner {
         let mut file = match File::open(&filename) {
@@ -53,6 +73,16 @@ impl Scanner {
         self.contents.chars().nth(self.position - 1)
     }
 
+    pub fn process(&mut self) {
+        loop {
+            let tok = self.scan();
+            match tok.typ {
+                TokenType::EOF => break,
+                _ => println!("{:?}", tok),
+            };
+        }
+    }
+
     // For now just output the value scanned
     pub fn scan(&mut self) -> Token {
         match self.put_back {
@@ -63,21 +93,67 @@ impl Scanner {
         match self.curr_ch {
             None     => { Token{ line : self.line, typ : TokenType::EOF } },
             Some(ch) => {
-                if ch.is_alphabetic() {
-                    Token { line : self.line, 
-                            typ : TokenType::ID{id : self.build_val(|c| c.is_alphabetic()) }} 
+                if ch == '#' {
+                    loop {
+                        let c = self.next_char();
+                        match c {
+                            None => return Token { line : self.line, typ : TokenType::EOF },
+                            Some(c) => {
+                                if c == '\n' { break; }
+                            }
+                        }
+                    }
+                    self.line += 1;
+                    self.scan()
+                } else if ch == ' ' || ch == '\t'{
+                    self.scan() 
+                } else if ch == '\n' {
+                    self.line += 1;
+                    self.scan()
+                } else if ch.is_alphabetic() {
+                    let _id = self.build_val(|c| c.is_alphabetic() );
+                    Token { line : self.line, typ : type_for_id(_id) }
                 } else if ch.is_numeric() {
                     Token { line : self.line, 
                             typ : TokenType::NUM{val : self.build_val(|c| c.is_numeric()) }} 
                 } else {
-                    self.process_special()
+                    Token { line : self.line,
+                            typ : self.process_special() }
                 }
             }
         }
     }
 
-    fn process_special(&mut self) -> Token {
-        Token { line : 0, typ : TokenType::EOF }
+    fn process_special(&mut self) -> TokenType {
+        let ch = self.curr_ch.unwrap();
+        match ch {
+            '('  => TokenType::LPAREN,
+            ')'  => TokenType::RPAREN,
+            '='  => TokenType::EQ,
+            '+'  => TokenType::PLUS,
+            '-'  => TokenType::MINUS,
+            '>'  => self.next_might_be('=', TokenType::LT, TokenType::LE),
+            '<'  => self.next_might_be('=', TokenType::GT, TokenType::GE),
+            '\\' => self.next_might_be('=', TokenType::DIVIDE, TokenType::NE),
+            ':'  => self.next_must_be(':', TokenType::ASSIGN),
+            _ => panic!("[ERROR] Unsupported character {} on line {}", ch, self.line),
+        }
+    }
+
+    fn next_might_be(&mut self, next : char, if_one : TokenType, if_two : TokenType) -> TokenType {
+        let ch = self.next_char().unwrap();
+        match ch == next {
+            true => if_two, 
+            false =>  { self.put_back = true; if_one },
+        }
+    }
+
+    fn next_must_be(&mut self, next : char, typ : TokenType) -> TokenType {
+        let ch = self.next_char().unwrap();
+        match ch == next {
+            true => typ,
+            false => panic!("[ERROR] On line {}, expected {} found {}", self.line, next, ch),
+        }
     }
 
     fn build_val<F>(&mut self, func : F) -> String
