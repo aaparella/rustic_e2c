@@ -17,6 +17,7 @@ enum TokenType {
     ASSIGN,    LPAREN,
     RPAREN,    PLUS,
     MINUS,     TIMES,    DIVIDE,
+    SQUARE,    SQRT,
     EQ,  NE,  LT,
     GT,  LE,  GE,
 
@@ -24,7 +25,7 @@ enum TokenType {
 
     ID { id :  String },
     NUM{ val : String },
-    EOF,
+    EOF, UNSUP { ch : char },
 }
 
 pub struct Scanner {
@@ -64,7 +65,7 @@ impl Scanner {
         Scanner { contents : cont, 
                   curr_ch  : None, 
                   position : 0,
-                  line     : 0, 
+                  line     : 1, 
                   put_back : false}
     }
 
@@ -77,7 +78,7 @@ impl Scanner {
         loop {
             let tok = self.scan();
             match tok.typ {
-                TokenType::EOF => break,
+                TokenType::EOF => { println!("{:?}", tok); break; },
                 _ => println!("{:?}", tok),
             };
         }
@@ -105,7 +106,7 @@ impl Scanner {
                     }
                     self.line += 1;
                     self.scan()
-                } else if ch == ' ' || ch == '\t'{
+                } else if ch == ' ' || ch == '\t' {
                     self.scan() 
                 } else if ch == '\n' {
                     self.line += 1;
@@ -131,28 +132,34 @@ impl Scanner {
             ')'  => TokenType::RPAREN,
             '='  => TokenType::EQ,
             '+'  => TokenType::PLUS,
-            '-'  => TokenType::MINUS,
-            '>'  => self.next_might_be('=', TokenType::LT, TokenType::LE),
-            '<'  => self.next_might_be('=', TokenType::GT, TokenType::GE),
+            '*'  => TokenType::TIMES,
+            '@'  => TokenType::SQRT,
+            '^'  => TokenType::SQUARE,
+            '>'  => self.next_might_be('=', TokenType::GT, TokenType::LE),
+            '-'  => self.next_might_be('>', TokenType::MINUS, TokenType::ARROW),
+            '<'  => self.next_might_be('=', TokenType::LT, TokenType::GE),
             '\\' => self.next_might_be('=', TokenType::DIVIDE, TokenType::NE),
             ':'  => self.next_must_be(':', TokenType::ASSIGN),
-            _ => panic!("[ERROR] Unsupported character {} on line {}", ch, self.line),
+            '['  => self.next_must_be(']', TokenType::BOX),
+            _    => TokenType::UNSUP{ ch : ch },
         }
     }
 
     fn next_might_be(&mut self, next : char, if_one : TokenType, if_two : TokenType) -> TokenType {
-        let ch = self.next_char().unwrap();
-        match ch == next {
+        self.curr_ch = self.next_char();
+        match self.curr_ch.unwrap() == next {
             true => if_two, 
-            false =>  { self.put_back = true; if_one },
+            false =>  { 
+                self.put_back = true; 
+                if_one },
         }
     }
 
     fn next_must_be(&mut self, next : char, typ : TokenType) -> TokenType {
-        let ch = self.next_char().unwrap();
-        match ch == next {
+        self.curr_ch = self.next_char();
+        match self.curr_ch.unwrap() == next {
             true => typ,
-            false => panic!("[ERROR] On line {}, expected {} found {}", self.line, next, ch),
+            false => panic!("[ERROR] On line {}, expected {} found {}", self.line, next, self.curr_ch.unwrap()),
         }
     }
 
@@ -169,6 +176,7 @@ impl Scanner {
                 true => id.push(ch),
                 false => break,
             };
+            self.curr_ch = self.next_char();
         }
         self.put_back = true;
         id.iter().map(|c| *c).collect()
