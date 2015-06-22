@@ -36,6 +36,7 @@ pub struct Scanner {
     put_back : bool,
 }
 
+// Get the approprite type for a given ID
 fn type_for_id(_id : String) -> TokenType {
     match _id.as_ref() {
         "var" => TokenType::VAR,
@@ -55,6 +56,7 @@ fn type_for_id(_id : String) -> TokenType {
 }
 
 impl Scanner { 
+    // Create a new scanner, scanning contents of file filename
     pub fn new(filename : String) -> Scanner {
         let mut file = match File::open(&filename) {
             Ok(f) => f,
@@ -69,11 +71,13 @@ impl Scanner {
                   put_back : false}
     }
 
+    // Advance character by one, DOES NOT set curr_ch
     fn next_char(&mut self) -> Option<char> {
         self.position += 1;
         self.contents.chars().nth(self.position - 1)
     }
 
+    // Simple dummy function for testing functionality
     pub fn process(&mut self) {
         loop {
             let tok = self.scan();
@@ -84,7 +88,8 @@ impl Scanner {
         }
     }
 
-    // For now just output the value scanned
+    // Return the next Token in the file
+    // Unsupported characters / EOF are treated as Tokens, no panicing
     pub fn scan(&mut self) -> Token {
         match self.put_back {
             true => { self.put_back = false; },
@@ -94,6 +99,7 @@ impl Scanner {
         match self.curr_ch {
             None     => { Token{ line : self.line, typ : TokenType::EOF } },
             Some(ch) => {
+                // Chrew through a commented line
                 if ch == '#' {
                     loop {
                         let c = self.next_char();
@@ -125,6 +131,7 @@ impl Scanner {
         }
     }
 
+    // Match each special character to approprite TokenType
     fn process_special(&mut self) -> TokenType {
         let ch = self.curr_ch.unwrap();
         match ch {
@@ -145,6 +152,8 @@ impl Scanner {
         }
     }
 
+    // Current character may or may not be followed by next
+    // If it is the two character sequence, return if_two, if not, if_one
     fn next_might_be(&mut self, next : char, if_one : TokenType, if_two : TokenType) -> TokenType {
         self.curr_ch = self.next_char();
         match self.curr_ch.unwrap() == next {
@@ -155,6 +164,7 @@ impl Scanner {
         }
     }
 
+    // The current character MUST be followed by next, otherwise we panic
     fn next_must_be(&mut self, next : char, typ : TokenType) -> TokenType {
         self.curr_ch = self.next_char();
         match self.curr_ch.unwrap() == next {
@@ -163,6 +173,8 @@ impl Scanner {
         }
     }
 
+    // Build the value for either an ID or a numeric
+    // Keep taking characters so long as func is true for each
     fn build_val<F>(&mut self, func : F) -> String
         where F : Fn(char) -> bool { 
         
@@ -178,6 +190,7 @@ impl Scanner {
             };
             self.curr_ch = self.next_char();
         }
+        // We've gone one past the ID, so put back last character
         self.put_back = true;
         id.iter().map(|c| *c).collect()
     }
