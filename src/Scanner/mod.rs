@@ -2,13 +2,14 @@ use std::fs::File;
 use std::io::Read;
 
 #[derive(Debug)]
-struct Token {
-    typ  : TokenType,
-    line : u16,
+pub struct Token {
+    pub typ  : TokenType,
+    pub line : u16,
 }
 
 #[derive(Debug)]
-enum TokenType {
+#[derive(PartialEq)]
+pub enum TokenType {
     VAR,   RAV,   PRINT,
     IF,    FI,    DO,
     OD,    ELSE,  FA,
@@ -23,9 +24,9 @@ enum TokenType {
 
     ARROW,   BOX,
 
-    ID { id :  String },
-    NUM{ val : String },
-    EOF, UNSUP { ch : char },
+    ID(String),
+    NUM(String),
+    EOF, UNSUP(char),
 }
 
 pub struct Scanner {
@@ -37,8 +38,8 @@ pub struct Scanner {
 }
 
 // Get the approprite type for a given ID
-fn type_for_id(_id : String) -> TokenType {
-    match _id.as_ref() {
+fn type_for_id(id : String) -> TokenType {
+    match id.as_ref() {
         "var" => TokenType::VAR,
         "rav" => TokenType::RAV,
         "print" => TokenType::PRINT,
@@ -51,7 +52,7 @@ fn type_for_id(_id : String) -> TokenType {
         "af" => TokenType::AF,
         "to" => TokenType::TO,
         "st" => TokenType::ST,
-         _ => TokenType::ID{id : _id},
+         _ => TokenType::ID(id),
      }
 }
 
@@ -122,7 +123,7 @@ impl Scanner {
                     Token { line : self.line, typ : type_for_id(_id) }
                 } else if ch.is_numeric() {
                     Token { line : self.line, 
-                            typ : TokenType::NUM{val : self.build_val(|c| c.is_numeric()) }} 
+                            typ : TokenType::NUM(self.build_val(|c| c.is_numeric())) } 
                 } else {
                     Token { line : self.line,
                             typ : self.process_special() }
@@ -148,7 +149,7 @@ impl Scanner {
             '\\' => self.next_might_be('=', TokenType::DIVIDE, TokenType::NE),
             ':'  => self.next_must_be('=', TokenType::ASSIGN),
             '['  => self.next_must_be(']', TokenType::BOX),
-            _    => TokenType::UNSUP{ ch : ch },
+            _    => TokenType::UNSUP(ch),
         }
     }
 
