@@ -146,7 +146,7 @@ impl Scanner {
             '>'  => self.next_might_be('=', TokenType::GT, TokenType::LE),
             '-'  => self.next_might_be('>', TokenType::MINUS, TokenType::ARROW),
             '<'  => self.next_might_be('=', TokenType::LT, TokenType::GE),
-            '\\' => self.next_might_be('=', TokenType::DIVIDE, TokenType::NE),
+            '/' => self.next_might_be('=', TokenType::DIVIDE, TokenType::NE),
             ':'  => self.next_must_be('=', TokenType::ASSIGN),
             '['  => self.next_must_be(']', TokenType::BOX),
             _    => TokenType::UNSUP(ch),

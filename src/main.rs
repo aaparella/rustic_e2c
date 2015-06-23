@@ -12,6 +12,10 @@ impl<'a> Parser<'a> {
         Parser { token : Token { line : 0, typ : TokenType::EOF } , scanner : scanner }
     }
 
+    fn error(&self, foo : &str) -> ! {
+        panic!("[ERROR] Could not parse {}", foo);
+    }
+
     // Parse through the file given to the provided Scanner to tokenize
     pub fn parse(&mut self) {
         self.scan();
@@ -22,10 +26,12 @@ impl<'a> Parser<'a> {
         }
     }
 
+    // program ::= block
     fn program(&mut self) {
         self.block();
     }
 
+    // block ::= [declarations] statement_list
     fn block(&mut self) {
         if self.token_match(TokenType::VAR) {
             self.declarations();
@@ -34,6 +40,7 @@ impl<'a> Parser<'a> {
         self.statement_list();
     }
 
+    // declarations ::= "var" { id } "rav"
     fn declarations(&mut self) {
         self.must_be(TokenType::VAR);
         while self.token_match_id() {
@@ -42,6 +49,7 @@ impl<'a> Parser<'a> {
         self.must_be(TokenType::RAV);
     }
 
+    // { statement } 
     fn statement_list(&mut self) {
         while self.is_statement() {
             self.statement();
@@ -49,18 +57,15 @@ impl<'a> Parser<'a> {
     }
 
     fn statement(&mut self) {
-        if self.token_match_id() {
-            self.assignment();   
-        } else {
-            match self.token.typ {
-                TokenType::IF => self.eif(),
-                TokenType::DO => self.edo(),
-                TokenType::FA => self.fa(),
-                TokenType::PRINT => self.print(),
-                _ => panic!("[ERROR] Damn"),
-            };
-        }
-    }
+        match self.token.typ {
+            TokenType::ID(_) => self.assignment(),
+            TokenType::IF    => self.eif(),
+            TokenType::DO    => self.edo(),
+            TokenType::FA    => self.fa(),
+            TokenType::PRINT => self.print(),
+            _ => self.error("statement"),
+        };
+     } 
 
     fn assignment(&mut self) {
         self.must_be_id();
@@ -150,18 +155,17 @@ impl<'a> Parser<'a> {
     }
 
     fn factor(&mut self) {
-        if self.token_match(TokenType::LPAREN) {
-            self.must_be(TokenType::LPAREN);
-            self.expression();
-            self.must_be(TokenType::RPAREN);
-        } else if self.token_match_id() {
-            self.must_be_id();
-        } else if self.token_match_num() {
-            self.must_be_num();
-        } else {
-            panic!("[ERROR] Factor");
-        }
-    }
+        match self.token.typ {
+            TokenType::ID(_) => { self.must_be_id(); },
+            TokenType::NUM(_) => { self.must_be_num(); },
+            TokenType::LPAREN => {
+                self.must_be(TokenType::LPAREN);
+                self.expression();
+                self.must_be(TokenType::RPAREN);
+            }, 
+            _ => self.error("factor"),
+        };
+   }
 
     fn relop(&mut self) {
         match self.token.typ {
@@ -171,7 +175,7 @@ impl<'a> Parser<'a> {
             TokenType::NE => self.must_be(TokenType::NE),
             TokenType::LE => self.must_be(TokenType::LE),
             TokenType::GE => self.must_be(TokenType::GE),
-            _ => panic!("[ERROR] Relop"),
+            _ => self.error("relop"),
         };
     }
 
@@ -179,7 +183,7 @@ impl<'a> Parser<'a> {
         match self.token.typ {
             TokenType::PLUS  => self.must_be(TokenType::PLUS),
             TokenType::MINUS => self.must_be(TokenType::MINUS),
-            _ => panic!("[ERROR] Addop"),
+            _ => self.error("addop"),
         };
     }
     
@@ -187,7 +191,7 @@ impl<'a> Parser<'a> {
         match self.token.typ {
             TokenType::TIMES  => self.must_be(TokenType::TIMES),
             TokenType::DIVIDE => self.must_be(TokenType::DIVIDE),
-            _ => panic!("[ERROR] Multop"),
+            _ => self.error("multop"),
         };
     }
 
@@ -218,11 +222,8 @@ impl<'a> Parser<'a> {
     }
 
     fn is_statement(&self) -> bool {
-        if self.token_match_id() {
-            return true;
-        }
         match self.token.typ {
-            TokenType::PRINT | TokenType::IF | TokenType::DO | TokenType::FA => true,
+            TokenType::ID(_) | TokenType::PRINT | TokenType::IF | TokenType::DO | TokenType::FA => true,
             _ => false,
         }
     }
@@ -260,14 +261,14 @@ impl<'a> Parser<'a> {
     fn must_be_num(&mut self) {
         match self.token.typ {
             TokenType::NUM(_) => self.scan(),
-            _ => panic!("[ERROR] Something something else"),
+            _ => panic!("[ERROR] Expected TokenType::ID found {:?} on line {}", self.token.typ, self.token.line),
         };
     }
 
     // Panics if the current TokenType is not equal to that specified
     fn must_be(&mut self, typ : TokenType) {
         match self.token.typ == typ {
-            true => { self.scan(); },
+            true => { self.scan() },
             false => panic!("[ERROR] Expected {:?} found {:?} on line {}", typ, self.token.typ, self.token.line),
         };
     }
