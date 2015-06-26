@@ -209,7 +209,7 @@ impl<'a> Parser<'a> {
 
     fn is_relop(&self) -> bool {
         match self.token.typ {
-            TokenType::LT | TokenType::GT | TokenType::EQ | TokenType::LE | TokenType::GE => true,
+            TokenType::NE | TokenType::LT | TokenType::GT | TokenType::EQ | TokenType::LE | TokenType::GE => true,
             _ => false,
         }
     }
