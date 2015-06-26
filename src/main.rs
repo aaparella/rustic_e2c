@@ -56,6 +56,7 @@ impl<'a> Parser<'a> {
         }
     }
 
+    // statement ::= assignment | if | do | fa | print
     fn statement(&mut self) {
         match self.token.typ {
             TokenType::ID(_) => self.assignment(),
@@ -67,29 +68,34 @@ impl<'a> Parser<'a> {
         };
      } 
 
+    // assignment ::= id ":=" expression
     fn assignment(&mut self) {
         self.must_be_id();
         self.must_be(TokenType::ASSIGN);
         self.expression();
     }
 
+    // print ::= "print" expression
     fn print(&mut self) {
         self.must_be(TokenType::PRINT);
         self.expression();
     }
     
+    // if ::= "if" guarded_commands "fi"
     fn eif(&mut self) {
         self.must_be(TokenType::IF);
         self.guarded_commands();
         self.must_be(TokenType::FI);
     }
 
+    // do ::= "do" guarded_commands "od"
     fn edo(&mut self) {
         self.must_be(TokenType::DO);
         self.guarded_commands();
         self.must_be(TokenType::OD);
     }
 
+    // fa ::= "fa" id ":=" expression "to" expression ["st" expression] commands "af"
     fn fa(&mut self) {
         self.must_be(TokenType::FA);
         self.must_be_id();
@@ -107,6 +113,7 @@ impl<'a> Parser<'a> {
         self.must_be(TokenType::AF);
     }
 
+    // guarded_commands ::= guarded_command { "[]" guarded_command } [ "else" commands ]
     fn guarded_commands(&mut self) {
         self.guarded_command();
         while self.token_match(TokenType::BOX) {
@@ -120,16 +127,19 @@ impl<'a> Parser<'a> {
         }
     }
 
+    // guarded_command ::= expression commands
     fn guarded_command(&mut self) {
         self.expression();
         self.commands();
     }
 
+    // commands ::= "->" block
     fn commands(&mut self) {
         self.must_be(TokenType::ARROW);
         self.block();
     }
 
+    // expression ::= simple [relop simple]
     fn expression(&mut self) {
         self.simple();
         if self.is_relop() {
@@ -138,6 +148,7 @@ impl<'a> Parser<'a> {
         }
     }
 
+    // simple ::= term {addop term}
     fn simple(&mut self) {
         self.term();
         while self.is_addop() {
@@ -146,6 +157,7 @@ impl<'a> Parser<'a> {
         }
     }
 
+    // term ::= factor { multop factor }
     fn term(&mut self) {
         self.factor();
         while self.is_multop() {
@@ -154,6 +166,8 @@ impl<'a> Parser<'a> {
         }
     }
 
+    // factor ::= "(" expression ")" | id | number | "^" expression | "@" expression
+    // TODO : Implement sqrt and power operators
     fn factor(&mut self) {
         match self.token.typ {
             TokenType::ID(_) => { self.must_be_id(); },
@@ -165,8 +179,9 @@ impl<'a> Parser<'a> {
             }, 
             _ => self.error("factor"),
         };
-   }
+    }
 
+    // relop ::= "=" | "<" | ">" | "/=" | "<=" | ">="
     fn relop(&mut self) {
         match self.token.typ {
             TokenType::EQ => self.must_be(TokenType::EQ),
@@ -179,6 +194,7 @@ impl<'a> Parser<'a> {
         };
     }
 
+    // addop ::= "+" | "-"
     fn addop(&mut self) {
         match self.token.typ {
             TokenType::PLUS  => self.must_be(TokenType::PLUS),
@@ -187,6 +203,7 @@ impl<'a> Parser<'a> {
         };
     }
     
+    // multop ::= "*" | "/"
     fn multop(&mut self) {
         match self.token.typ {
             TokenType::TIMES  => self.must_be(TokenType::TIMES),
