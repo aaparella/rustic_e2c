@@ -43,7 +43,7 @@ impl<'a> Parser<'a> {
     // declarations ::= "var" { id } "rav"
     fn declarations(&mut self) {
         self.must_be(TokenType::VAR);
-        while self.token_match_id() {
+        while self.token_match(TokenType::ID("".to_string())) {
             self.scan();
         }
         self.must_be(TokenType::RAV);
@@ -70,7 +70,7 @@ impl<'a> Parser<'a> {
 
     // assignment ::= id ":=" expression
     fn assignment(&mut self) {
-        self.must_be_id();
+        self.must_be(TokenType::ID("".to_string()));
         self.must_be(TokenType::ASSIGN);
         self.expression();
     }
@@ -98,7 +98,7 @@ impl<'a> Parser<'a> {
     // fa ::= "fa" id ":=" expression "to" expression ["st" expression] commands "af"
     fn fa(&mut self) {
         self.must_be(TokenType::FA);
-        self.must_be_id();
+        self.must_be(TokenType::ID("".to_string()));
         self.must_be(TokenType::ASSIGN);
         self.expression();
         self.must_be(TokenType::TO);
@@ -170,8 +170,8 @@ impl<'a> Parser<'a> {
     // TODO : Implement sqrt and power operators
     fn factor(&mut self) {
         match self.token.typ {
-            TokenType::ID(_) => { self.must_be_id(); },
-            TokenType::NUM(_) => { self.must_be_num(); },
+            TokenType::ID(_) => { self.must_be(TokenType::ID("".to_string())); },
+            TokenType::NUM(_) => { self.must_be(TokenType::NUM("".to_string())); },
             TokenType::LPAREN => {
                 self.must_be(TokenType::LPAREN);
                 self.expression();
@@ -246,48 +246,46 @@ impl<'a> Parser<'a> {
     }
 
     // Checks if current TokenType is equal to that specified
-    fn token_match(&self, typ : TokenType) -> bool {
-        self.token.typ == typ
-    }
-
-    // This disgusts me
-    fn token_match_id(&self) -> bool {
-        match self.token.typ {
-            TokenType::ID(_) => true,
-            _ => false,
-        }
-    }
-
-    // Ew
-    fn token_match_num(&self) -> bool {
-        match self.token.typ {
-            TokenType::NUM(_) => true,
-            _ => false,
-        }
-    }
-
-    // I threw up a bit inside
-    fn must_be_id(&mut self) {
-        match self.token.typ {
-            TokenType::ID(_) => self.scan(),
-            _ => panic!("[ERROR] Something something"),
-        };
-    }
-    
-    // Someone save me
-    fn must_be_num(&mut self) {
-        match self.token.typ {
-            TokenType::NUM(_) => self.scan(),
-            _ => panic!("[ERROR] Expected TokenType::ID found {:?} on line {}", self.token.typ, self.token.line),
-        };
-    }
-
-    // Panics if the current TokenType is not equal to that specified
     fn must_be(&mut self, typ : TokenType) {
-        match self.token.typ == typ {
-            true => { self.scan() },
-            false => panic!("[ERROR] Expected {:?} found {:?} on line {}", typ, self.token.typ, self.token.line),
+         match typ {
+            TokenType::ID(_) => {
+                match self.token.typ {
+                    TokenType::ID(_) => self.scan(),
+                    _ => self.error("ID"),
+                }
+            },
+            TokenType::NUM(_) => {
+                match self.token.typ {
+                    TokenType::NUM(_) => self.scan(),
+                    _ => self.error("NUM"),
+                }
+            },
+            _ => {
+                match self.token.typ == typ {
+                    true => self.scan(),
+                    false => self.error("Something"),
+                }
+            },
         };
+    }        
+
+    // Return true if current token is of specified type, false if not
+    fn token_match(&self, typ : TokenType) -> bool {
+        match typ {
+            TokenType::ID(_) => {
+                match self.token.typ {
+                    TokenType::ID(_) => true,
+                    _ => false,
+                }
+            },
+            TokenType::NUM(_) => {
+                match self.token.typ {
+                    TokenType::NUM(_) => true,
+                    _ => false,
+                }
+            },
+            _ => self.token.typ == typ,
+        }
     }
 }    
 
