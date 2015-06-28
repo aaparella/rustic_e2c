@@ -1,17 +1,24 @@
 pub mod scanner;
 use self::scanner::*;
 
-pub struct Parser<'a> {
+pub struct Parser {
     token : Token,
-    scanner : &'a mut Scanner,
+    scanner : Scanner,
 }
 
-impl<'a> Parser<'a> {
-    pub fn new(scanner : &'a mut Scanner) -> Parser<'a> {
+impl Parser {
+    /* pub fn new(scanner : &'a mut Scanner) -> Parser<'a> {
         Parser {
             token : Token { line : 0, typ : TokenType::EOF },
             scanner : scanner,
         }
+    } */
+
+    pub fn new(filename : String) -> Parser {
+        Parser {
+            token : Token { line : 0, typ : TokenType::EOF },
+            scanner : Scanner::new(filename),
+        }   
     }
 
     fn error(&self, foo : &str) -> ! {
