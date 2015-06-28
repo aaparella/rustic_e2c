@@ -1,33 +1,7 @@
+use parser::token::{Token, TokenType, type_for_id};
+
 use std::fs::File;
 use std::io::Read;
-
-#[derive(Debug)]
-pub struct Token {
-    pub typ  : TokenType,
-    pub line : u16,
-}
-
-#[derive(Debug)]
-#[derive(PartialEq)]
-pub enum TokenType {
-    VAR,   RAV,   PRINT,
-    IF,    FI,    DO,
-    OD,    ELSE,  FA,
-    AF,    TO,    ST,
-
-    ASSIGN,    LPAREN,
-    RPAREN,    PLUS,
-    MINUS,     TIMES,    DIVIDE,
-    SQUARE,    SQRT,
-    EQ,  NE,  LT,
-    GT,  LE,  GE,
-
-    ARROW,   BOX,
-
-    ID(String),
-    NUM(String),
-    EOF, UNSUP(char),
-}
 
 pub struct Scanner {
     contents : String,
@@ -35,25 +9,6 @@ pub struct Scanner {
     position : usize,
     line     : u16,
     put_back : bool,
-}
-
-// Get the approprite type for a given ID
-fn type_for_id(id : String) -> TokenType {
-    match id.as_ref() {
-        "var" => TokenType::VAR,
-        "rav" => TokenType::RAV,
-        "print" => TokenType::PRINT,
-        "if" => TokenType::IF,
-        "fi" => TokenType::FI,
-        "do" => TokenType::DO,
-        "od" => TokenType::OD,
-        "else" => TokenType::ELSE,
-        "fa" => TokenType::FA,
-        "af" => TokenType::AF,
-        "to" => TokenType::TO,
-        "st" => TokenType::ST,
-         _ => TokenType::ID(id),
-     }
 }
 
 impl Scanner {

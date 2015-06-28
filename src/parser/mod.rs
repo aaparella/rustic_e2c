@@ -1,5 +1,8 @@
 pub mod scanner;
-use self::scanner::*;
+pub mod token;
+
+use self::scanner::{Scanner};
+use self::token::{Token, TokenType};
 
 pub struct Parser {
     token : Token,
