@@ -70,4 +70,13 @@ impl SymbolTable {
         }
         false
     }
+    
+    pub fn declared(&self, var : Variable) -> bool {
+        for frame in self.frames.iter().take(self.frames.len() - 1) {
+            if frame.contains(&var) {
+                return true;
+            }
+        }
+        false
+    }
 }

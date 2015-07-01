@@ -4,24 +4,20 @@ pub mod symbol_table;
 
 use self::scanner::{Scanner};
 use self::token::{Token, TokenType};
+use self::symbol_table::{SymbolTable, Variable};
 
 pub struct Parser {
     token : Token,
     scanner : Scanner,
+    sym_tab : SymbolTable,
 }
 
 impl Parser {
-    /* pub fn new(scanner : &'a mut Scanner) -> Parser<'a> {
-        Parser {
-            token : Token { line : 0, typ : TokenType::EOF },
-            scanner : scanner,
-        }
-    } */
-
     pub fn new(filename : String) -> Parser {
         Parser {
-            token : Token { line : 0, typ : TokenType::EOF },
+            token   : Token { line : 0, typ : TokenType::EOF },
             scanner : Scanner::new(filename),
+            sym_tab : SymbolTable::new(),
         }   
     }
 
@@ -46,17 +42,22 @@ impl Parser {
 
     // block ::= [declarations] statement_list
     fn block(&mut self) {
+        self.sym_tab.add_frame();
         if self.token_match(TokenType::VAR) {
             self.declarations();
         }
-
         self.statement_list();
+        self.sym_tab.pop_frame();
     }
 
     // declarations ::= "var" { id } "rav"
     fn declarations(&mut self) {
         self.must_be(TokenType::VAR);
         while self.token_match(TokenType::ID("".to_string())) {
+            match self.sym_tab.declared(Variable::from_token(self.token)) {
+                true  => println!("[WARNING] Redeclared variable"),
+                false => self.sym_tab.add_var(Variable::from_token(self.token)),
+            };
             self.scan();
         }
         self.must_be(TokenType::RAV);
