@@ -1,5 +1,6 @@
 pub mod scanner;
 pub mod token;
+pub mod symbol_table;
 
 use self::scanner::{Scanner};
 use self::token::{Token, TokenType};

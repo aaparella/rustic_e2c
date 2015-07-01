@@ -1,17 +1,38 @@
+use super::token::{Token, TokenType};
+
 #[derive(Debug)]
 pub struct Variable {
     name  : String,
-    uses  : u8,
-    lines : Vec<u8>,
+    uses  : u16,
+    lines : Vec<u16>,
 }
 
+// Make it much easier to check for a variable
+impl PartialEq for Variable {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name && self.lines[0] == other.lines[0]
+    }
+}
 
 impl Variable {
-    pub fn new(name : String, line : u8) -> Variable {
+    pub fn new(name : String, line : u16) -> Variable {
         Variable { name : name, uses : 1, lines : vec![line] }
     }
 
-    pub fn inc_usage(&mut self, line : u8) {
+    // Cosntruct a Variable from a token
+    // Will almost strictly be used
+    pub fn from_token(token : Token) -> Variable {
+        Variable {
+            name : match token.typ {
+                    TokenType::ID(id)   => id,
+                    TokenType::NUM(num) => num,
+                    _ => panic!("Shit") },
+            uses  : 1, 
+            lines : vec![token.line],
+        }
+    }
+
+    pub fn inc_usage(&mut self, line : u16) {
         self.uses += 1;
         self.lines.push(line);
     }
@@ -32,5 +53,21 @@ impl SymbolTable {
 
     pub fn pop_frame(&mut self) {
         self.frames.pop();
+    }
+
+    pub fn add_var(&mut self, var : Variable) {
+        match self.frames.len() {
+            0 => self.frames.push(vec![var]),
+            _ => self.frames[0].push(var),
+        };
+    }
+
+    pub fn table_contains(&self, var : Variable) -> bool {
+        for frame in self.frames.iter() {
+            if frame.contains(&var) {
+                return true;
+            }
+        }
+        false
     }
 }
