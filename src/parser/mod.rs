@@ -54,9 +54,9 @@ impl Parser {
     fn declarations(&mut self) {
         self.must_be(TokenType::VAR);
         while self.token_match(TokenType::ID("".to_string())) {
-            match self.sym_tab.declared(Variable::from_token(self.token)) {
+            match self.sym_tab.declared(Variable::from_token(&self.token)) {
                 true  => println!("[WARNING] Redeclared variable"),
-                false => self.sym_tab.add_var(Variable::from_token(self.token)),
+                false => self.sym_tab.add_var(Variable::from_token(&self.token)),
             };
             self.scan();
         }

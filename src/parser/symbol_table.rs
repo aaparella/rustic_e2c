@@ -21,11 +21,11 @@ impl Variable {
 
     // Cosntruct a Variable from a token
     // Will almost strictly be used
-    pub fn from_token(token : Token) -> Variable {
+    pub fn from_token(token : &Token) -> Variable {
         Variable {
             name : match token.typ {
-                    TokenType::ID(id)   => id,
-                    TokenType::NUM(num) => num,
+                    TokenType::ID(ref id)   => id.chars().collect(),
+                    TokenType::NUM(ref num) => num.chars().collect(),
                     _ => panic!("Shit") },
             uses  : 1, 
             lines : vec![token.line],
