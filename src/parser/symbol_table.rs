@@ -56,11 +56,11 @@ impl SymbolTable {
         self.frames.last_mut().unwrap().push(var);
     }
 
-    pub fn table_contains(&self, var : Variable) -> bool {
+    pub fn in_scope(&self, var : Variable) -> bool {
         self.frames.iter().any(|frame| (*frame).contains(&var))
     }
     
-    pub fn declared(&self, var : Variable) -> bool {
+    pub fn declared_in_block(&self, var : Variable) -> bool {
         let frame = self.frames.last().unwrap();
         frame.iter().any(|v| *v == var)
     }
