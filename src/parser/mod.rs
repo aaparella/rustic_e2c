@@ -55,7 +55,7 @@ impl Parser {
         self.must_be(TokenType::VAR);
         while self.token_match(TokenType::ID("".to_string())) {
             match self.sym_tab.declared(Variable::from_token(&self.token)) {
-                true  => println!("[WARNING] Redeclared variable"),
+                true  => println!("[WARNING] Redeclared variable {:?}", self.token),
                 false => self.sym_tab.add_var(Variable::from_token(&self.token)),
             };
             self.scan();
@@ -84,6 +84,10 @@ impl Parser {
 
     // assignment ::= id ":=" expression
     fn assignment(&mut self) {
+        if !self.sym_tab.table_contains(Variable::from_token(&self.token)) {
+            panic!("[ERROR] Assigning to undeclared ID {:?}", self.token);
+        }
+
         self.must_be(TokenType::ID("".to_string()));
         self.must_be(TokenType::ASSIGN);
         self.expression();
@@ -112,6 +116,9 @@ impl Parser {
     // fa ::= "fa" id ":=" expression "to" expression ["st" expression] commands "af"
     fn fa(&mut self) {
         self.must_be(TokenType::FA);
+        if !self.sym_tab.table_contains(Variable::from_token(&self.token)) {
+            panic!("[ERROR] Reference to undeclared ID {:?}", self.token);
+        }
         self.must_be(TokenType::ID("".to_string()));
         self.must_be(TokenType::ASSIGN);
         self.expression();
@@ -184,7 +191,12 @@ impl Parser {
     // TODO : Implement sqrt and power operators
     fn factor(&mut self) {
         match self.token.typ {
-            TokenType::ID(_) => { self.must_be(TokenType::ID("".to_string())); },
+            TokenType::ID(_) => { 
+                if !self.sym_tab.table_contains(Variable::from_token(&self.token)) {
+                    panic!("[ERROR] Reference to undeclared variable {:?}", self.token);
+                }
+                self.must_be(TokenType::ID("".to_string()));
+            },
             TokenType::NUM(_) => { self.must_be(TokenType::NUM("".to_string())); },
             TokenType::LPAREN => {
                 self.must_be(TokenType::LPAREN);

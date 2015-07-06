@@ -10,15 +10,11 @@ pub struct Variable {
 // Make it much easier to check for a variable
 impl PartialEq for Variable {
     fn eq(&self, other: &Self) -> bool {
-        self.name == other.name && self.lines[0] == other.lines[0]
+        self.name == other.name
     }
 }
 
 impl Variable {
-    pub fn new(name : String, line : u16) -> Variable {
-        Variable { name : name, uses : 1, lines : vec![line] }
-    }
-
     // Cosntruct a Variable from a token
     // Will almost strictly be used
     pub fn from_token(token : &Token) -> Variable {
@@ -32,6 +28,7 @@ impl Variable {
         }
     }
 
+    #[allow(dead_code)]
     pub fn inc_usage(&mut self, line : u16) {
         self.uses += 1;
         self.lines.push(line);
@@ -56,27 +53,15 @@ impl SymbolTable {
     }
 
     pub fn add_var(&mut self, var : Variable) {
-        match self.frames.len() {
-            0 => self.frames.push(vec![var]),
-            _ => self.frames[0].push(var),
-        };
+        self.frames.last_mut().unwrap().push(var);
     }
 
     pub fn table_contains(&self, var : Variable) -> bool {
-        for frame in self.frames.iter() {
-            if frame.contains(&var) {
-                return true;
-            }
-        }
-        false
+        self.frames.iter().any(|frame| (*frame).contains(&var))
     }
     
     pub fn declared(&self, var : Variable) -> bool {
-        for frame in self.frames.iter().take(self.frames.len() - 1) {
-            if frame.contains(&var) {
-                return true;
-            }
-        }
-        false
+        let frame = self.frames.last().unwrap();
+        frame.iter().any(|v| *v == var)
     }
 }
