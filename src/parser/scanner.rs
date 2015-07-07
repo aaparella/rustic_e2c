@@ -7,7 +7,7 @@ pub struct Scanner {
     contents : String,
     curr_ch  : Option<char>,
     position : usize,
-    line     : u16,
+    line     : usize,
     put_back : bool,
 }
 

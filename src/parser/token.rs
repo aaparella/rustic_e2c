@@ -1,7 +1,7 @@
 #[derive(Debug)]
 pub struct Token {
     pub typ  : TokenType,
-    pub line : u16,
+    pub line : usize,
 }
 
 #[derive(Debug)]

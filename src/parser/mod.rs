@@ -2,9 +2,9 @@ pub mod scanner;
 pub mod token;
 pub mod symbol_table;
 
-use self::scanner::{Scanner};
+use self::scanner::Scanner;
 use self::token::{Token, TokenType};
-use self::symbol_table::{SymbolTable, Variable};
+use self::symbol_table::SymbolTable;
 
 pub struct Parser {
     token : Token,
@@ -33,6 +33,8 @@ impl Parser {
         if !self.token_match(TokenType::EOF) {
             panic!("[ERROR] Junk after logical end of program");
         }
+        
+        self.sym_tab.display_variables();
     }
 
     // program ::= block
@@ -54,9 +56,9 @@ impl Parser {
     fn declarations(&mut self) {
         self.must_be(TokenType::VAR);
         while self.token_match(TokenType::ID("".to_string())) {
-            match self.sym_tab.declared_in_block(Variable::from_token(&self.token)) {
+            match self.sym_tab.declared_in_block(&self.token) {
                 true  => println!("[WARNING] Redeclared variable {:?}", self.token),
-                false => self.sym_tab.add_var(Variable::from_token(&self.token)),
+                false => self.sym_tab.add_var(&self.token),
             };
             self.scan();
         }
@@ -84,10 +86,10 @@ impl Parser {
 
     // assignment ::= id ":=" expression
     fn assignment(&mut self) {
-        if !self.sym_tab.in_scope(Variable::from_token(&self.token)) {
+        if !self.sym_tab.in_scope(&self.token) {
             panic!("[ERROR] Assigning to undeclared ID {:?}", self.token);
         }
-
+        self.sym_tab.inc_assign(&self.token);
         self.must_be(TokenType::ID("".to_string()));
         self.must_be(TokenType::ASSIGN);
         self.expression();
@@ -116,9 +118,10 @@ impl Parser {
     // fa ::= "fa" id ":=" expression "to" expression ["st" expression] commands "af"
     fn fa(&mut self) {
         self.must_be(TokenType::FA);
-        if !self.sym_tab.in_scope(Variable::from_token(&self.token)) {
+        if !self.sym_tab.in_scope(&self.token) {
             panic!("[ERROR] Reference to undeclared ID {:?}", self.token);
         }
+        self.sym_tab.inc_assign(&self.token);
         self.must_be(TokenType::ID("".to_string()));
         self.must_be(TokenType::ASSIGN);
         self.expression();
@@ -192,9 +195,10 @@ impl Parser {
     fn factor(&mut self) {
         match self.token.typ {
             TokenType::ID(_) => { 
-                if !self.sym_tab.in_scope(Variable::from_token(&self.token)) {
+                if !self.sym_tab.in_scope(&self.token) {
                     panic!("[ERROR] Reference to undeclared variable {:?}", self.token);
                 }
+                self.sym_tab.inc_usage(&self.token);
                 self.must_be(TokenType::ID("".to_string()));
             },
             TokenType::NUM(_) => { self.must_be(TokenType::NUM("".to_string())); },
