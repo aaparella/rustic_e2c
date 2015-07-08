@@ -18,6 +18,7 @@ impl PartialEq for Variable {
     }
 }
 
+// Yeah, it sucks, I'll fix it 
 impl fmt::Display for Variable {
     fn fmt(&self, f : &mut fmt::Formatter) -> fmt::Result {
         let _ = write!(f, "{}\n", self.name);

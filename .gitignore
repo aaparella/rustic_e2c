@@ -2,3 +2,5 @@ target
 correct
 
 *.pdf
+output/*.c
+input/*.e

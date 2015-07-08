@@ -5,19 +5,30 @@ pub mod symbol_table;
 use self::scanner::Scanner;
 use self::token::{Token, TokenType};
 use self::symbol_table::SymbolTable;
+use std::fs;
+use std::io::Write;
+use std::io;
 
 pub struct Parser {
-    token : Token,
-    scanner : Scanner,
-    sym_tab : SymbolTable,
+    token    : Token,
+    scanner  : Scanner,
+    out_file : fs::File,
+    sym_tab  : SymbolTable,
 }
 
 impl Parser {
     pub fn new(filename : String) -> Parser {
+        let out = match fs::File::create(&filename.replace("input", "output")
+                                                  .replace(".e", ".c")) {
+            Ok(f)    => f,
+            Err(err) => panic!("[ERROR] {}", err),
+        };
+
         Parser {
-            token   : Token { line : 0, typ : TokenType::EOF },
-            scanner : Scanner::new(filename),
-            sym_tab : SymbolTable::new(),
+            token    : Token { line : 0, typ : TokenType::EOF },
+            scanner  : Scanner::new(&filename),
+            out_file : out,
+            sym_tab  : SymbolTable::new(),
         }   
     }
 
@@ -26,30 +37,36 @@ impl Parser {
     }
 
     // Parse through the file given to the provided Scanner to tokenize
-    pub fn parse(&mut self) {
+    pub fn parse(&mut self) -> io::Result<()> {
         self.scan();
         self.program();
-       
+
         if !self.token_match(TokenType::EOF) {
             panic!("[ERROR] Junk after logical end of program");
         }
         
         self.sym_tab.display_variables();
+        Ok(())
     }
 
     // program ::= block
-    fn program(&mut self) {
+    fn program(&mut self) -> io::Result<()> {
+        try!(write!(self.out_file, "#include <stdio.h>\n"));
+        try!(write!(self.out_file, "int main() {{\n"));
         self.block();
+        try!(write!(self.out_file, "return 0;\n}}"));
+        Ok(())
     }
 
     // block ::= [declarations] statement_list
-    fn block(&mut self) {
+    fn block(&mut self) -> io::Result<()> {
         self.sym_tab.add_frame();
         if self.token_match(TokenType::VAR) {
             self.declarations();
         }
         self.statement_list();
         self.sym_tab.pop_frame();
+        Ok(())
     }
 
     // declarations ::= "var" { id } "rav"

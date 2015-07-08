@@ -13,7 +13,7 @@ pub struct Scanner {
 
 impl Scanner {
     // Create a new scanner, scanning contents of file filename
-    pub fn new(filename : String) -> Scanner {
+    pub fn new(filename : &String) -> Scanner {
         let mut file = match File::open(&filename) {
             Ok(f) => f,
             Err(e) => panic!("Could not open {} : {}", filename, e),
