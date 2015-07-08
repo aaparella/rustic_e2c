@@ -1,5 +1,6 @@
 use super::token::{Token, TokenType};
 use std::collections::HashMap;
+use std::fmt;
 
 #[derive(Debug)]
 pub struct Variable {
@@ -14,6 +15,27 @@ pub struct Variable {
 impl PartialEq for Variable {
     fn eq(&self, other: &Self) -> bool {
         self.name == other.name
+    }
+}
+
+impl fmt::Display for Variable {
+    fn fmt(&self, f : &mut fmt::Formatter) -> fmt::Result {
+        let _ = write!(f, "{}\n", self.name);
+        let _ = write!(f, "\tdeclared on {} at depth {}\n\tUses : ", self.name, self.depth);
+        for key in self.uses.keys() {
+            let _ = match self.uses.get(key).unwrap() {
+                &1 => write!(f, "{} ", key),
+                _ => write!(f, "{}({}) ", key, self.uses.get(key).unwrap()),
+            };
+        }
+        let _ = write!(f, "\n\tAssignments : ");
+        for key in self.assignments.keys() {
+            let _ = match self.assignments.get(key).unwrap() {
+                &1 => write!(f, "{} ", key),
+                _ => write!(f, "{}({})", key, self.assignments.get(key).unwrap()),
+            };
+        }
+        write!(f, "\n")
     }
 }
 
@@ -102,7 +124,7 @@ impl SymbolTable {
 
     pub fn display_variables(&mut self) {
         for var in &self.vars {
-            println!("{:?}", var);
+            println!("{}", var);
         }
     }
 }
