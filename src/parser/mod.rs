@@ -5,29 +5,20 @@ pub mod symbol_table;
 use self::scanner::Scanner;
 use self::token::{Token, TokenType};
 use self::symbol_table::SymbolTable;
-use std::fs;
 use std::io::Write;
 use std::io;
 
 pub struct Parser {
     token    : Token,
     scanner  : Scanner,
-    out_file : fs::File,
     sym_tab  : SymbolTable,
 }
 
 impl Parser {
     pub fn new(filename : String) -> Parser {
-        let out = match fs::File::create(&filename.replace("input", "output")
-                                                  .replace(".e", ".c")) {
-            Ok(f)    => f,
-            Err(err) => panic!("[ERROR] {}", err),
-        };
-
         Parser {
             token    : Token { line : 0, typ : TokenType::EOF },
             scanner  : Scanner::new(&filename),
-            out_file : out,
             sym_tab  : SymbolTable::new(),
         }   
     }
@@ -37,7 +28,7 @@ impl Parser {
     }
 
     // Parse through the file given to the provided Scanner to tokenize
-    pub fn parse(&mut self) -> io::Result<()> {
+    pub fn parse(&mut self) {
         self.scan();
         self.program();
 
@@ -46,27 +37,24 @@ impl Parser {
         }
         
         self.sym_tab.display_variables();
-        Ok(())
     }
 
     // program ::= block
-    fn program(&mut self) -> io::Result<()> {
-        try!(write!(self.out_file, "#include <stdio.h>\n"));
-        try!(write!(self.out_file, "int main() {{\n"));
+    fn program(&mut self) {
+        println!("#include <stdio.h>\n");
+        println!("int main()\n{{");
         self.block();
-        try!(write!(self.out_file, "return 0;\n}}"));
-        Ok(())
+        println!("return 0;\n}}");
     }
 
     // block ::= [declarations] statement_list
-    fn block(&mut self) -> io::Result<()> {
+    fn block(&mut self) {
         self.sym_tab.add_frame();
         if self.token_match(TokenType::VAR) {
             self.declarations();
         }
         self.statement_list();
         self.sym_tab.pop_frame();
-        Ok(())
     }
 
     // declarations ::= "var" { id } "rav"
@@ -75,7 +63,13 @@ impl Parser {
         while self.token_match(TokenType::ID("".to_string())) {
             match self.sym_tab.declared_in_block(&self.token) {
                 true  => println!("[WARNING] Redeclared variable {:?}", self.token),
-                false => self.sym_tab.add_var(&self.token),
+                false =>  {
+                    match self.token.typ {
+                        TokenType::ID(ref id) => println!("int x_{}=-12345;", id),
+                        _ => panic!("[ERROR] Uh oh"),
+                    };
+                    self.sym_tab.add_var(&self.token);
+                }
             };
             self.scan();
         }
@@ -107,6 +101,7 @@ impl Parser {
             panic!("[ERROR] Assigning to undeclared ID {:?}", self.token);
         }
         self.sym_tab.inc_assign(&self.token);
+        println!("");
         self.must_be(TokenType::ID("".to_string()));
         self.must_be(TokenType::ASSIGN);
         self.expression();
