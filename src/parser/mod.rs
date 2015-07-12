@@ -24,7 +24,8 @@ impl Parser {
     }
 
     fn error(&self, foo : &str) -> ! {
-        panic!("[ERROR] Could not parse {}", foo);
+        writeln!(&mut io::stderr(), "[ERROR] {}", foo).unwrap();
+        panic!()
     }
 
     // Parse through the file given to the provided Scanner to tokenize
@@ -33,7 +34,8 @@ impl Parser {
         self.program();
 
         if !self.token_match(TokenType::EOF) {
-            panic!("[ERROR] Junk after logical end of program");
+            writeln!(&mut io::stderr(), "[ERROR] Junk after logical end of program").unwrap();
+            panic!();
         }
         
         self.sym_tab.display_variables();
@@ -66,7 +68,7 @@ impl Parser {
                 false =>  {
                     match self.token.typ {
                         TokenType::ID(ref id) => println!("int x_{}=-12345;", id),
-                        _ => panic!("[ERROR] Uh oh"),
+                        _ => self.error("Alex miswrote something"),
                     };
                     self.sym_tab.add_var(&self.token);
                 }
@@ -101,7 +103,11 @@ impl Parser {
             panic!("[ERROR] Assigning to undeclared ID {:?}", self.token);
         }
         self.sym_tab.inc_assign(&self.token);
-        println!("");
+        match self.token.typ {
+            TokenType::ID(ref id) => print!("x_{}=", id),
+            _ => self.error("Alex seriously screwed up"),
+        };
+        
         self.must_be(TokenType::ID("".to_string()));
         self.must_be(TokenType::ASSIGN);
         self.expression();
@@ -110,11 +116,13 @@ impl Parser {
     // print ::= "print" expression
     fn print(&mut self) {
         self.must_be(TokenType::PRINT);
+        println!("printf(\"%d\n\", ");
         self.expression();
     }
     
     // if ::= "if" guarded_commands "fi"
     fn eif(&mut self) {
+        println!("\nif");
         self.must_be(TokenType::IF);
         self.guarded_commands();
         self.must_be(TokenType::FI);
@@ -122,25 +130,39 @@ impl Parser {
 
     // do ::= "do" guarded_commands "od"
     fn edo(&mut self) {
+        println!("while(1){{");
         self.must_be(TokenType::DO);
+        print!("if");
         self.guarded_commands();
+        println!("else {{ break; }}");
+        println!("}}\n");
         self.must_be(TokenType::OD);
     }
 
     // fa ::= "fa" id ":=" expression "to" expression ["st" expression] commands "af"
     fn fa(&mut self) {
+        print!("for( ");
         self.must_be(TokenType::FA);
         if !self.sym_tab.in_scope(&self.token) {
             panic!("[ERROR] Reference to undeclared ID {:?}", self.token);
         }
+        let name = match self.token.typ {
+            TokenType::ID(ref id) => id.chars().collect(),
+            _ => "".to_string(),
+        };
+        print!("x_{}", name);
         self.sym_tab.inc_assign(&self.token);
         self.must_be(TokenType::ID("".to_string()));
+        print!(" = ");
         self.must_be(TokenType::ASSIGN);
         self.expression();
+        print!("; x_{} <= ", name);
         self.must_be(TokenType::TO);
         self.expression();
-
+        print!("; x_{}++ )", name);
+    
         if self.token_match(TokenType::ST) {
+            print!("if");
             self.must_be(TokenType::ST);
             self.expression();
         }
@@ -153,11 +175,13 @@ impl Parser {
     fn guarded_commands(&mut self) {
         self.guarded_command();
         while self.token_match(TokenType::BOX) {
+            print!("else if");
             self.must_be(TokenType::BOX);
             self.guarded_command();
         }
 
         if self.token_match(TokenType::ELSE) {
+            print!("else");
             self.must_be(TokenType::ELSE);
             self.commands();
         }
@@ -172,16 +196,20 @@ impl Parser {
     // commands ::= "->" block
     fn commands(&mut self) {
         self.must_be(TokenType::ARROW);
+        print!("{{");
         self.block();
+        print!("}}");
     }
 
     // expression ::= simple [relop simple]
     fn expression(&mut self) {
+        print!("( ");
         self.simple();
         if self.is_relop() {
             self.relop();
             self.simple();
         }
+        print!(" )");
     }
 
     // simple ::= term {addop term}
@@ -213,11 +241,17 @@ impl Parser {
                 self.sym_tab.inc_usage(&self.token);
                 self.must_be(TokenType::ID("".to_string()));
             },
-            TokenType::NUM(_) => { self.must_be(TokenType::NUM("".to_string())); },
+            TokenType::NUM(_) => { 
+                
+                
+                self.must_be(TokenType::NUM("".to_string()));
+            },
             TokenType::LPAREN => {
                 self.must_be(TokenType::LPAREN);
+                print!("( ");
                 self.expression();
                 self.must_be(TokenType::RPAREN);
+                print!(" )");
             }, 
             _ => self.error("factor"),
         };
