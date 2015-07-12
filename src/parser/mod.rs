@@ -68,7 +68,7 @@ impl Parser {
                 false =>  {
                     match self.token.typ {
                         TokenType::ID(ref id) => println!("int x_{}=-12345;", id),
-                        _ => self.error("Alex miswrote something"),
+                        _ => unreachable!(),
                     };
                     self.sym_tab.add_var(&self.token);
                 }
@@ -105,7 +105,7 @@ impl Parser {
         self.sym_tab.inc_assign(&self.token);
         match self.token.typ {
             TokenType::ID(ref id) => print!("x_{}=", id),
-            _ => self.error("Alex seriously screwed up"),
+            _ => unreachable!(),
         };
         
         self.must_be(TokenType::ID("".to_string()));
@@ -148,9 +148,9 @@ impl Parser {
         if !self.sym_tab.in_scope(&self.token) {
             panic!("[ERROR] Reference to undeclared ID {:?}", self.token);
         }
-        let name = match self.token.typ {
+        let name : String = match self.token.typ {
             TokenType::ID(ref id) => id.chars().collect(),
-            _ => "".to_string(),
+            _ => unreachable!(),
         };
         print!("x_{}", name);
         self.sym_tab.inc_assign(&self.token);
@@ -240,18 +240,18 @@ impl Parser {
                 if !self.sym_tab.in_scope(&self.token) {
                     panic!("[ERROR] Reference to undeclared variable {:?}", self.token);
                 }
-                let str = match self.token.typ {
+                let str : String = match self.token.typ {
                     TokenType::ID(ref id) => id.chars().collect(),
-                    _ => "".to_string(),
+                    _ => unreachable!(), 
                 };
                 print!("x_{}", str);
                 self.sym_tab.inc_usage(&self.token);
                 self.must_be(TokenType::ID("".to_string()));
             },
             TokenType::NUM(_) => { 
-                let str = match self.token.typ {
+                let str : String = match self.token.typ {
                     TokenType::NUM(ref num) => num.chars().collect(),
-                    _ => "".to_string(),
+                    _ => unreachable!(), 
                 };
                 print!("{}", str);
                 self.must_be(TokenType::NUM("".to_string()));

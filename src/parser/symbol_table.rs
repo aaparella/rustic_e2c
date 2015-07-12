@@ -48,7 +48,7 @@ impl Variable {
             name : match token.typ {
                     TokenType::ID(ref id)   => id.chars().collect(),
                     TokenType::NUM(ref num) => num.chars().collect(),
-                    _ => panic!("Shit") },
+                    _ => panic!("[ERROR] Tried to convert non ID / NUM to variable") },
             uses  : HashMap::new(),
             assignments : HashMap::new(), 
             declared : token.line,
