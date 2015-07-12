@@ -111,18 +111,20 @@ impl Parser {
         self.must_be(TokenType::ID("".to_string()));
         self.must_be(TokenType::ASSIGN);
         self.expression();
+        println!(";");
     }
 
     // print ::= "print" expression
     fn print(&mut self) {
         self.must_be(TokenType::PRINT);
-        println!("printf(\"%d\n\", ");
+        print!("printf(\"%d\\n\", ");
         self.expression();
+        println!(");");
     }
     
     // if ::= "if" guarded_commands "fi"
     fn eif(&mut self) {
-        println!("\nif");
+        print!("\nif");
         self.must_be(TokenType::IF);
         self.guarded_commands();
         self.must_be(TokenType::FI);
@@ -159,7 +161,7 @@ impl Parser {
         print!("; x_{} <= ", name);
         self.must_be(TokenType::TO);
         self.expression();
-        print!("; x_{}++ )", name);
+        println!("; x_{}++ )", name);
     
         if self.token_match(TokenType::ST) {
             print!("if");
@@ -196,9 +198,9 @@ impl Parser {
     // commands ::= "->" block
     fn commands(&mut self) {
         self.must_be(TokenType::ARROW);
-        print!("{{");
+        println!("{{");
         self.block();
-        print!("}}");
+        println!("}}");
     }
 
     // expression ::= simple [relop simple]
@@ -238,12 +240,20 @@ impl Parser {
                 if !self.sym_tab.in_scope(&self.token) {
                     panic!("[ERROR] Reference to undeclared variable {:?}", self.token);
                 }
+                let str = match self.token.typ {
+                    TokenType::ID(ref id) => id.chars().collect(),
+                    _ => "".to_string(),
+                };
+                print!("x_{}", str);
                 self.sym_tab.inc_usage(&self.token);
                 self.must_be(TokenType::ID("".to_string()));
             },
             TokenType::NUM(_) => { 
-                
-                
+                let str = match self.token.typ {
+                    TokenType::NUM(ref num) => num.chars().collect(),
+                    _ => "".to_string(),
+                };
+                print!("{}", str);
                 self.must_be(TokenType::NUM("".to_string()));
             },
             TokenType::LPAREN => {
@@ -260,12 +270,12 @@ impl Parser {
     // relop ::= "=" | "<" | ">" | "/=" | "<=" | ">="
     fn relop(&mut self) {
         match self.token.typ {
-            TokenType::EQ => self.must_be(TokenType::EQ),
-            TokenType::LT => self.must_be(TokenType::LT),
-            TokenType::GT => self.must_be(TokenType::GT),
-            TokenType::NE => self.must_be(TokenType::NE),
-            TokenType::LE => self.must_be(TokenType::LE),
-            TokenType::GE => self.must_be(TokenType::GE),
+            TokenType::EQ => { self.must_be(TokenType::EQ); print!(" == "); }
+            TokenType::LT => { self.must_be(TokenType::LT); print!(" < ");  }
+            TokenType::GT => { self.must_be(TokenType::GT); print!(" > ");  }
+            TokenType::NE => { self.must_be(TokenType::NE); print!(" != "); }
+            TokenType::LE => { self.must_be(TokenType::LE); print!(" <= "); }
+            TokenType::GE => { self.must_be(TokenType::GE); print!(" >= "); }
             _ => self.error("relop"),
         };
     }
@@ -273,8 +283,8 @@ impl Parser {
     // addop ::= "+" | "-"
     fn addop(&mut self) {
         match self.token.typ {
-            TokenType::PLUS  => self.must_be(TokenType::PLUS),
-            TokenType::MINUS => self.must_be(TokenType::MINUS),
+            TokenType::PLUS  => { self.must_be(TokenType::PLUS);  print!(" + "); }
+            TokenType::MINUS => { self.must_be(TokenType::MINUS); print!(" - "); }
             _ => self.error("addop"),
         };
     }
@@ -282,8 +292,8 @@ impl Parser {
     // multop ::= "*" | "/"
     fn multop(&mut self) {
         match self.token.typ {
-            TokenType::TIMES  => self.must_be(TokenType::TIMES),
-            TokenType::DIVIDE => self.must_be(TokenType::DIVIDE),
+            TokenType::TIMES  => { self.must_be(TokenType::TIMES);  print!(" * "); }
+            TokenType::DIVIDE => { self.must_be(TokenType::DIVIDE); print!(" / "); }
             _ => self.error("multop"),
         };
     }
