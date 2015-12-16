@@ -1,5 +1,5 @@
 use std::env;
-mod parser;    
+mod parser;
 use parser::Parser;
 
 fn main() {

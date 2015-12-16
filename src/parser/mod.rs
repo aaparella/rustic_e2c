@@ -9,21 +9,24 @@ use std::io::Write;
 use std::io;
 
 pub struct Parser {
-    token    : Token,
-    scanner  : Scanner,
-    sym_tab  : SymbolTable,
+    token: Token,
+    scanner: Scanner,
+    sym_tab: SymbolTable,
 }
 
 impl Parser {
-    pub fn new(filename : String) -> Parser {
+    pub fn new(filename: String) -> Parser {
         Parser {
-            token    : Token { line : 0, typ : TokenType::EOF },
-            scanner  : Scanner::new(&filename),
-            sym_tab  : SymbolTable::new(),
-        }   
+            token: Token {
+                line: 0,
+                typ: TokenType::EOF,
+            },
+            scanner: Scanner::new(&filename),
+            sym_tab: SymbolTable::new(),
+        }
     }
 
-    fn error(&self, foo : &str) -> ! {
+    fn error(&self, foo: &str) -> ! {
         writeln!(&mut io::stderr(), "[ERROR] {}", foo).unwrap();
         panic!()
     }
@@ -34,10 +37,12 @@ impl Parser {
         self.program();
 
         if !self.token_match(TokenType::EOF) {
-            writeln!(&mut io::stderr(), "[ERROR] Junk after logical end of program").unwrap();
+            writeln!(&mut io::stderr(),
+                     "[ERROR] Junk after logical end of program")
+                .unwrap();
             panic!();
         }
-        
+
         self.sym_tab.display_variables();
     }
 
@@ -64,8 +69,8 @@ impl Parser {
         self.must_be(TokenType::VAR);
         while self.token_match(TokenType::ID("".to_string())) {
             match self.sym_tab.declared_in_block(&self.token) {
-                true  => println!("[WARNING] Redeclared variable {:?}", self.token),
-                false =>  {
+                true => println!("[WARNING] Redeclared variable {:?}", self.token),
+                false => {
                     match self.token.typ {
                         TokenType::ID(ref id) => println!("int x_{}=-12345;", id),
                         _ => unreachable!(),
@@ -78,7 +83,7 @@ impl Parser {
         self.must_be(TokenType::RAV);
     }
 
-    // { statement } 
+    // { statement }
     fn statement_list(&mut self) {
         while self.is_statement() {
             self.statement();
@@ -89,13 +94,13 @@ impl Parser {
     fn statement(&mut self) {
         match self.token.typ {
             TokenType::ID(_) => self.assignment(),
-            TokenType::IF    => self.eif(),
-            TokenType::DO    => self.edo(),
-            TokenType::FA    => self.fa(),
+            TokenType::IF => self.eif(),
+            TokenType::DO => self.edo(),
+            TokenType::FA => self.fa(),
             TokenType::PRINT => self.print(),
             _ => self.error("statement"),
         };
-     } 
+    }
 
     // assignment ::= id ":=" expression
     fn assignment(&mut self) {
@@ -107,7 +112,7 @@ impl Parser {
             TokenType::ID(ref id) => print!("x_{}=", id),
             _ => unreachable!(),
         };
-        
+
         self.must_be(TokenType::ID("".to_string()));
         self.must_be(TokenType::ASSIGN);
         self.expression();
@@ -121,7 +126,7 @@ impl Parser {
         self.expression();
         println!(");");
     }
-    
+
     // if ::= "if" guarded_commands "fi"
     fn eif(&mut self) {
         print!("\nif");
@@ -148,7 +153,7 @@ impl Parser {
         if !self.sym_tab.in_scope(&self.token) {
             panic!("[ERROR] Reference to undeclared ID {:?}", self.token);
         }
-        let name : String = match self.token.typ {
+        let name: String = match self.token.typ {
             TokenType::ID(ref id) => id.chars().collect(),
             _ => unreachable!(),
         };
@@ -162,7 +167,7 @@ impl Parser {
         self.must_be(TokenType::TO);
         self.expression();
         println!("; x_{}++ )", name);
-    
+
         if self.token_match(TokenType::ST) {
             print!("if");
             self.must_be(TokenType::ST);
@@ -236,33 +241,33 @@ impl Parser {
     // TODO : Implement sqrt and power operators
     fn factor(&mut self) {
         match self.token.typ {
-            TokenType::ID(_) => { 
+            TokenType::ID(_) => {
                 if !self.sym_tab.in_scope(&self.token) {
                     panic!("[ERROR] Reference to undeclared variable {:?}", self.token);
                 }
-                let str : String = match self.token.typ {
+                let str: String = match self.token.typ {
                     TokenType::ID(ref id) => id.chars().collect(),
                     _ => unreachable!(), 
                 };
                 print!("x_{}", str);
                 self.sym_tab.inc_usage(&self.token);
                 self.must_be(TokenType::ID("".to_string()));
-            },
-            TokenType::NUM(_) => { 
-                let str : String = match self.token.typ {
+            }
+            TokenType::NUM(_) => {
+                let str: String = match self.token.typ {
                     TokenType::NUM(ref num) => num.chars().collect(),
                     _ => unreachable!(), 
                 };
                 print!("{}", str);
                 self.must_be(TokenType::NUM("".to_string()));
-            },
+            }
             TokenType::LPAREN => {
                 self.must_be(TokenType::LPAREN);
                 print!("( ");
                 self.expression();
                 self.must_be(TokenType::RPAREN);
                 print!(" )");
-            }, 
+            } 
             _ => self.error("factor"),
         };
     }
@@ -270,12 +275,30 @@ impl Parser {
     // relop ::= "=" | "<" | ">" | "/=" | "<=" | ">="
     fn relop(&mut self) {
         match self.token.typ {
-            TokenType::EQ => { self.must_be(TokenType::EQ); print!(" == "); }
-            TokenType::LT => { self.must_be(TokenType::LT); print!(" < ");  }
-            TokenType::GT => { self.must_be(TokenType::GT); print!(" > ");  }
-            TokenType::NE => { self.must_be(TokenType::NE); print!(" != "); }
-            TokenType::LE => { self.must_be(TokenType::LE); print!(" <= "); }
-            TokenType::GE => { self.must_be(TokenType::GE); print!(" >= "); }
+            TokenType::EQ => {
+                self.must_be(TokenType::EQ);
+                print!(" == ");
+            }
+            TokenType::LT => {
+                self.must_be(TokenType::LT);
+                print!(" < ");
+            }
+            TokenType::GT => {
+                self.must_be(TokenType::GT);
+                print!(" > ");
+            }
+            TokenType::NE => {
+                self.must_be(TokenType::NE);
+                print!(" != ");
+            }
+            TokenType::LE => {
+                self.must_be(TokenType::LE);
+                print!(" <= ");
+            }
+            TokenType::GE => {
+                self.must_be(TokenType::GE);
+                print!(" >= ");
+            }
             _ => self.error("relop"),
         };
     }
@@ -283,17 +306,29 @@ impl Parser {
     // addop ::= "+" | "-"
     fn addop(&mut self) {
         match self.token.typ {
-            TokenType::PLUS  => { self.must_be(TokenType::PLUS);  print!(" + "); }
-            TokenType::MINUS => { self.must_be(TokenType::MINUS); print!(" - "); }
+            TokenType::PLUS => {
+                self.must_be(TokenType::PLUS);
+                print!(" + ");
+            }
+            TokenType::MINUS => {
+                self.must_be(TokenType::MINUS);
+                print!(" - ");
+            }
             _ => self.error("addop"),
         };
     }
-    
+
     // multop ::= "*" | "/"
     fn multop(&mut self) {
         match self.token.typ {
-            TokenType::TIMES  => { self.must_be(TokenType::TIMES);  print!(" * "); }
-            TokenType::DIVIDE => { self.must_be(TokenType::DIVIDE); print!(" / "); }
+            TokenType::TIMES => {
+                self.must_be(TokenType::TIMES);
+                print!(" * ");
+            }
+            TokenType::DIVIDE => {
+                self.must_be(TokenType::DIVIDE);
+                print!(" / ");
+            }
             _ => self.error("multop"),
         };
     }
@@ -312,7 +347,12 @@ impl Parser {
 
     fn is_relop(&self) -> bool {
         match self.token.typ {
-            TokenType::NE | TokenType::LT | TokenType::GT | TokenType::EQ | TokenType::LE | TokenType::GE => true,
+            TokenType::NE |
+            TokenType::LT |
+            TokenType::GT |
+            TokenType::EQ |
+            TokenType::LE |
+            TokenType::GE => true,
             _ => false,
         }
     }
@@ -326,53 +366,53 @@ impl Parser {
 
     fn is_statement(&self) -> bool {
         match self.token.typ {
-            TokenType::ID(_) | TokenType::PRINT | TokenType::IF | TokenType::DO | TokenType::FA => true,
+            TokenType::ID(_) | TokenType::PRINT | TokenType::IF | TokenType::DO | TokenType::FA => {
+                true
+            }
             _ => false,
         }
     }
 
     // Checks if current TokenType is equal to that specified
-    fn must_be(&mut self, typ : TokenType) {
-         match typ {
+    fn must_be(&mut self, typ: TokenType) {
+        match typ {
             TokenType::ID(_) => {
                 match self.token.typ {
                     TokenType::ID(_) => self.scan(),
                     _ => self.error("ID"),
                 }
-            },
+            }
             TokenType::NUM(_) => {
                 match self.token.typ {
                     TokenType::NUM(_) => self.scan(),
                     _ => self.error("NUM"),
                 }
-            },
+            }
             _ => {
                 match self.token.typ == typ {
                     true => self.scan(),
                     false => self.error("Something"),
                 }
-            },
+            }
         };
-    }        
+    }
 
     // Return true if current token is of specified type, false if not
-    fn token_match(&self, typ : TokenType) -> bool {
+    fn token_match(&self, typ: TokenType) -> bool {
         match typ {
             TokenType::ID(_) => {
                 match self.token.typ {
                     TokenType::ID(_) => true,
                     _ => false,
                 }
-            },
+            }
             TokenType::NUM(_) => {
                 match self.token.typ {
                     TokenType::NUM(_) => true,
                     _ => false,
                 }
-            },
+            }
             _ => self.token.typ == typ,
         }
     }
-}    
-
-
+}
